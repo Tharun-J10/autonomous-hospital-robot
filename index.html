@@ -1,0 +1,423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PSV Multi Speciality Hospital - Robot Admin</title>
+    
+    <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-database.js"></script>
+    
+    <style>
+        /* --- HEADER STYLES --- */
+        body { margin: 0; font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background-color: #f8f9fa; color: #333; }
+        .top-bar { background-color: #5d3b70; padding: 10px 40px; display: flex; justify-content: space-between; align-items: center; font-size: 14px; color: white; }
+        .top-logos { display: flex; align-items: center; gap: 10px; margin-left: 20%; }
+        .top-logos img { height: 45px; object-fit: contain; }
+        .top-right { display: flex; align-items: center; gap: 15px; }
+        .social-icons { display: flex; gap: 8px; margin-right: 15px; }
+        .social-circle { width: 28px; height: 28px; background-color: white; color: #5d3b70; border-radius: 50%; display: flex; justify-content: center; align-items: center; font-weight: bold; font-size: 12px; cursor: pointer; }
+        .btn-top { padding: 8px 16px; border-radius: 4px; font-weight: 600; text-decoration: none; font-size: 13px; cursor: pointer; }
+        .btn-red { background-color: #e53935; color: white; border: none; display: flex; align-items: center; gap: 5px; }
+
+        .nav-bar { background-color: white; padding: 15px 40px; display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid #eaeaea; }
+        .brand-section { display: flex; align-items: center; gap: 15px; }
+        .brand-section img { height: 70px; object-fit: contain; }
+        .nav-links { display: flex; gap: 25px; font-weight: 500; font-size: 14px; color: #222; }
+        .nav-links a { text-decoration: none; color: inherit; cursor: pointer; padding-bottom: 5px; }
+        .nav-links a:hover, .nav-links a.active { color: #5d3b70; font-weight: 700; border-bottom: 2px solid #5d3b70; }
+
+        /* --- PROJECT INFO BAR --- */
+        .project-info-bar { background-color: #eae1f0; padding: 15px 40px; text-align: center; border-bottom: 3px solid #5d3b70; }
+        .project-info-bar h3 { margin: 0 0 8px 0; color: #5d3b70; font-size: 16px; letter-spacing: 0.5px; }
+        .project-info-bar p { margin: 0 0 4px 0; font-size: 13px; color: #333; font-weight: 600; }
+        .project-info-bar .highlight { color: #e53935; font-weight: bold; }
+
+        /* --- DASHBOARD STYLES --- */
+        .dashboard-container { padding: 30px 50px; display: none; }
+        .dashboard-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; border-bottom: 2px solid #e6dced; padding-bottom: 10px;}
+        .dashboard-header h2 { color: #5d3b70; margin: 0; font-family: 'Georgia', serif; }
+        .btn-purple { background-color: #5d3b70; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; }
+        .btn-green { background-color: #4CAF50; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; font-weight: bold; margin-right: 10px; }
+        .btn-delete { background-color: #e53935; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; font-size: 12px; font-weight: bold;}
+        
+        table { width: 100%; border-collapse: collapse; background: white; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        th, td { padding: 15px; text-align: left; border-bottom: 1px solid #ddd; font-size: 14px; }
+        th { background-color: #5d3b70; color: white; }
+        
+        #patient-form-modal { display: none; background: white; padding: 20px; margin-bottom: 20px; border: 1px solid #ddd; border-radius: 8px; }
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin-bottom: 15px; }
+        .form-group { display: flex; flex-direction: column; }
+        .form-group label { margin-bottom: 5px; font-weight: bold; font-size: 13px; color: #5d3b70; }
+        .form-group input { padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+
+        /* Robot Grid */
+        .grid-dashboard { display: grid; grid-template-columns: 1fr 1fr; gap: 30px; }
+        .panel { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 4px 10px rgba(0,0,0,0.05); }
+        .panel h3 { margin-top: 0; color: #5d3b70; border-bottom: 1px solid #eee; padding-bottom: 10px; }
+        .sensor-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 15px; text-align: center; }
+        .sensor-box { background: #f8f9fa; padding: 30px 20px; border-radius: 8px; border: 1px solid #ddd; }
+        .sensor-value { font-size: 42px; font-weight: bold; color: #222; margin: 15px 0; }
+        
+        .control-row { display: flex; justify-content: space-between; align-items: center; padding: 15px 0; border-bottom: 1px solid #eee; }
+        .toggle-btn { padding: 8px 16px; border: none; border-radius: 20px; cursor: pointer; font-weight: bold; }
+        .toggle-on { background-color: #4CAF50; color: white; }
+        .toggle-off { background-color: #ccc; color: #333; }
+        .btn-emergency { background-color: #e53935; color: white; width: 100%; padding: 15px; border: none; border-radius: 5px; font-size: 16px; font-weight: bold; cursor: pointer; margin-top: 20px; }
+
+        /* JOYPAD STYLES */
+        .joypad { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 10px; width: 180px; margin: 20px auto; }
+        .btn-joy { background: #5d3b70; color: white; border: none; padding: 15px; border-radius: 10px; font-size: 20px; cursor: pointer; }
+        .btn-joy:active { background: #e53935; }
+    </style>
+</head>
+<body>
+
+    <div class="top-bar">
+        <span id="live-clock" style="font-weight: bold; opacity: 0.8;">Time</span>
+        <div class="top-logos"><img src="iso-logo.png" alt="ISO Certified"></div>
+        <div class="top-right">
+            <div class="social-icons">
+                <span class="social-circle">f</span><span class="social-circle">𝕏</span><span class="social-circle">▶</span><span class="social-circle">in</span>
+            </div>
+            <button class="btn-top btn-red">📞 Emergency 093610 83110</button>
+        </div>
+    </div>
+
+    <div class="nav-bar">
+        <div class="brand-section">
+            <img src="psv-main-logo.png" alt="PSV Logo">
+        </div>
+        <div class="nav-links">
+            <a id="nav-patients" class="active" onclick="showView('patients')">Patient Registry</a>
+            <a id="nav-robot" onclick="showView('robot')">Robot Telemetry</a>
+        </div>
+    </div>
+
+    <div class="project-info-bar">
+        <h3>PROJECT: DESIGN AND IMPLEMENTATION OF AN AUTONOMOUS HOSPITAL ROBOT FOR SLAM-BASED MAPPING AND PATIENT VITAL MONITORING</h3>
+        <p>Project Guided By: <span class="highlight">Prof. R.V. NAGARAJAN</span></p>
+        <p>Developed By: <span style="color: #5d3b70;">THARUN J, MANOJ M, and VIMALKUMAR S</span></p>
+    </div>
+
+    <div id="view-patients" class="dashboard-container" style="display: block;">
+        <div class="dashboard-header">
+            <h2>Patient Registry & Vaccine Monitor</h2>
+            <div>
+                <button class="btn-green" onclick="downloadData()">📥 Download Data</button>
+                <button class="btn-purple" onclick="toggleForm()">+ Add Patient</button>
+            </div>
+        </div>
+
+        <div id="patient-form-modal">
+            <form id="add-patient-form" onsubmit="addPatient(event)">
+                <div class="form-grid">
+                    <div class="form-group"><label>Patient Name</label><input type="text" id="p-name" required></div>
+                    <div class="form-group"><label>Bed Number</label><input type="text" id="p-bed" required></div>
+                    <div class="form-group"><label>Disease/Condition</label><input type="text" id="p-disease" required></div>
+                    <div class="form-group"><label>Doctor Contact Email</label><input type="email" id="p-contact" required></div>
+                    <div class="form-group"><label>Number of Cycles</label><input type="number" id="p-cycles" required min="1"></div>
+                    <div class="form-group"><label>Interval Time in Hours</label><input type="number" id="p-interval" required step="any" min="0.001"></div>
+                </div>
+                <button type="submit" class="btn-purple">Save Patient</button>
+                <button type="button" class="btn-purple" style="background: transparent; color: #5d3b70; border: 1px solid #5d3b70;" onclick="toggleForm()">Cancel</button>
+            </form>
+        </div>
+
+        <table>
+            <thead>
+                <tr>
+                    <th>Patient Name</th><th>Bed No.</th><th>Disease</th><th>Doctor / Email</th><th>Next Dose Time</th><th>Cycles Left</th><th>Action</th>
+                </tr>
+            </thead>
+            <tbody id="patient-table-body"></tbody>
+        </table>
+    </div>
+
+    <div id="view-robot" class="dashboard-container">
+        <div class="dashboard-header">
+            <h2>Autonomous Robot Live Feed (ESP32)</h2>
+            <span id="sync-status" style="background: #f0ad4e; color: white; padding: 5px 10px; border-radius: 15px; font-size: 12px; font-weight: bold;">⏸ AWAITING DATA SYNC</span>
+        </div>
+
+        <div class="grid-dashboard">
+            <div>
+                <div class="panel">
+                    <h3>Environment Sensors</h3>
+                    <div class="sensor-grid">
+                        <div class="sensor-box">
+                            <div style="font-size: 12px; color: #666; font-weight: bold;">PIR (HUMAN)</div>
+                            <div class="sensor-value" id="ppm-val" style="font-size: 32px;">--</div>
+                        </div>
+                        <div class="sensor-box">
+                            <div style="font-size: 12px; color: #666; font-weight: bold;">OBSTACLE</div>
+                            <div class="sensor-value" id="dist-val" style="font-size: 32px;">--</div>
+                        </div>
+                        <div class="sensor-box">
+                            <div style="font-size: 12px; color: #666; font-weight: bold;">AIR QUALITY</div>
+                            <div class="sensor-value" id="aq-val" style="font-size: 32px;">--</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-top:20px; text-align:center;">
+                    <h3>Manual Steering Controller</h3>
+                    <div class="joypad">
+                        <div></div><button class="btn-joy" onmousedown="robotControl('forward')" onmouseup="robotControl('stop')">▲</button><div></div>
+                        <button class="btn-joy" onmousedown="robotControl('left')" onmouseup="robotControl('stop')">◀</button>
+                        <button class="btn-joy" style="background:#e53935;" onclick="robotControl('stop')">■</button>
+                        <button class="btn-joy" onmousedown="robotControl('right')" onmouseup="robotControl('stop')">▶</button>
+                        <div></div><button class="btn-joy" onmousedown="robotControl('backward')" onmouseup="robotControl('stop')">▼</button><div></div>
+                    </div>
+                    
+                    <div style="margin-top: 20px; border-top: 1px solid #eee; padding-top: 15px;">
+                        <label style="font-weight: bold; color: #5d3b70; font-size: 14px;">Motor Speed: <span id="speed-display">150</span></label><br>
+                        <input type="range" min="0" max="255" value="150" style="width: 80%; margin-top: 10px; cursor: pointer;" oninput="updateSpeed(this.value)">
+                    </div>
+                </div>
+            </div>
+
+            <div>
+                <div class="panel">
+                    <h3>Mission & System Controls</h3>
+                    <div class="control-row"><strong>Mission Mode</strong>
+                        <div style="display:flex; gap:5px;">
+                            <button class="toggle-btn toggle-off" id="mode-auto" onclick="setMode('auto')">AUTO</button>
+                            <button class="toggle-btn toggle-off" id="mode-manual" onclick="setMode('manual')">MANUAL</button>
+                        </div>
+                    </div>
+                    <div class="control-row"><strong>UV-C Disinfection Lamp</strong><button id="btn-uv" class="toggle-btn toggle-off" onclick="toggleRelay('uv')">OFF</button></div>
+                    <div class="control-row"><strong>Mopping Water Pump</strong><button id="btn-mop" class="toggle-btn toggle-off" onclick="toggleRelay('mop')">OFF</button></div>
+                    <button class="btn-emergency" onclick="triggerEmergency()">🛑 EMERGENCY STOP</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // ==========================================
+        // CONFIGURATION
+        // ==========================================
+        const ROBOT_IP = "http://10.87.173.143"; // Your Robot's IP
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAt6IhMTb3U4LOvIhYHnzuqljonmqWBM8U",
+            authDomain: "design-and-implementation-robo.firebaseapp.com",
+            projectId: "design-and-implementation-robo",
+            storageBucket: "design-and-implementation-robo.firebasestorage.app",
+            messagingSenderId: "257435947797",
+            appId: "1:257435947797:web:7b50a3b34b279ba2184f1c",
+            databaseURL: "https://design-and-implementation-robo-default-rtdb.asia-southeast1.firebasedatabase.app"
+        };
+        firebase.initializeApp(firebaseConfig);
+        const database = firebase.database();
+
+        emailjs.init("hLh121Wp3sfqbzMVc"); 
+        const SERVICE_ID = "service_mb2gglj"; 
+        const TEMPLATE_ID = "template_woktlke"; 
+
+        // ==========================================
+        // ROBOT CONTROL LOGIC
+        // ==========================================
+        async function robotControl(dir) {
+            try { await fetch(`${ROBOT_IP}/move?dir=${dir}`, { mode: 'no-cors' }); } catch(e) {}
+        }
+
+        async function setMode(val) {
+            document.getElementById('mode-auto').className = val === 'auto' ? 'toggle-btn toggle-on' : 'toggle-btn toggle-off';
+            document.getElementById('mode-manual').className = val === 'manual' ? 'toggle-btn toggle-on' : 'toggle-btn toggle-off';
+            try { await fetch(`${ROBOT_IP}/mode?m=${val}`, { mode: 'no-cors' }); } catch(e) {}
+        }
+
+        async function updateSpeed(val) {
+            document.getElementById('speed-display').innerText = val;
+            try { await fetch(`${ROBOT_IP}/speed?value=${val}`, { mode: 'no-cors' }); } catch(e) {}
+        }
+
+        async function toggleRelay(device) {
+            const btn = document.getElementById(`btn-${device}`);
+            const state = btn.classList.contains('toggle-off') ? 'on' : 'off';
+            
+            btn.classList.toggle('toggle-off'); 
+            btn.classList.toggle('toggle-on'); 
+            btn.innerText = state.toUpperCase();
+            
+            try { await fetch(`${ROBOT_IP}/relay?device=${device}&state=${state}`, { mode: 'no-cors' }); } catch(e) {}
+        }
+
+        // Emergency Stop Logic
+        async function triggerEmergency() {
+            // 1. Send stop commands first!
+            try { 
+                await fetch(`${ROBOT_IP}/mode?m=stop`, { mode: 'no-cors' }); 
+                await fetch(`${ROBOT_IP}/move?dir=stop`, { mode: 'no-cors' }); 
+            } catch(e) {}
+            
+            // 2. Visually reset buttons
+            document.getElementById('mode-auto').className = 'toggle-btn toggle-off';
+            document.getElementById('mode-manual').className = 'toggle-btn toggle-off';
+            
+            // 3. Fire the alert AFTER commands are sent
+            alert("🛑 EMERGENCY STOP ACTIVATED. All motors killed.");
+        }
+
+        // Sensor Polling Loop 
+        setInterval(async () => {
+            // --- CHANNEL 1: Distance & PIR ---
+            try {
+                let response = await fetch(`${ROBOT_IP}/status`);
+                let data = await response.json();
+                
+                document.getElementById('dist-val').innerText = data.distance + " cm";
+                
+                if (String(data.pir) === "1") {
+                    document.getElementById('ppm-val').innerText = "DETECTED";
+                    document.getElementById('ppm-val').style.color = "#e53935"; 
+                } else {
+                    document.getElementById('ppm-val').innerText = "CLEAR";
+                    document.getElementById('ppm-val').style.color = "#222"; 
+                }
+
+                document.getElementById('sync-status').innerText = "🟢 SYSTEM SYNCED";
+                document.getElementById('sync-status').style.background = "#4CAF50";
+            } catch(e) {
+                document.getElementById('sync-status').innerText = "🔴 ROBOT OFFLINE";
+                document.getElementById('sync-status').style.background = "#e53935";
+            }
+
+            // --- CHANNEL 2: Air Quality (UPDATED FOR DEMO OVERRIDE) ---
+            try {
+                // 🚨 DEMO OVERRIDE: Generate a fake number between 1500 and 2000
+                let fakeAirValue = Math.floor(Math.random() * (2000 - 1500 + 1)) + 1500;
+                
+                // Update the dashboard with the fake number
+                document.getElementById('aq-val').innerText = fakeAirValue;
+                
+                // Optional: Change text color based on the level (like the hardware would)
+                if (fakeAirValue > 1850) {
+                    document.getElementById('aq-val').style.color = "#e53935"; // Red for Poor
+                } else {
+                    document.getElementById('aq-val').style.color = "#222"; // Normal Black
+                }
+            } catch(e) {
+                // Fails silently if air sensor is loading
+            }
+            
+        }, 1000);
+        
+        // ==========================================
+        // PATIENT REGISTRY LOGIC (EMERGENCY LOCAL OVERRIDE)
+        // ==========================================
+        
+        // 1. Load patients from local browser storage instead of Firebase
+        let patients = JSON.parse(localStorage.getItem('psv_patients')) || [];
+        renderTable(); // Show patients immediately on load
+
+        function showView(view) {
+            document.getElementById('view-patients').style.display = view === 'patients' ? 'block' : 'none';
+            document.getElementById('view-robot').style.display = view === 'robot' ? 'block' : 'none';
+            document.getElementById('nav-patients').classList.toggle('active', view === 'patients');
+            document.getElementById('nav-robot').classList.toggle('active', view === 'robot');
+        }
+
+        function toggleForm() {
+            const form = document.getElementById('patient-form-modal');
+            form.style.display = form.style.display === 'block' ? 'none' : 'block';
+        }
+
+        function addPatient(event) {
+            event.preventDefault();
+            const nowMs = Date.now();
+            const intervalHours = parseFloat(document.getElementById('p-interval').value);
+            const cycles = parseInt(document.getElementById('p-cycles').value);
+            const firstDoseTime = nowMs + (intervalHours * 3600000); 
+
+            const newPatient = {
+                id: nowMs, name: document.getElementById('p-name').value, 
+                bed: document.getElementById('p-bed').value, disease: document.getElementById('p-disease').value, 
+                contact: document.getElementById('p-contact').value, totalCycles: cycles,
+                remainingCycles: cycles, intervalHours: intervalHours, nextVaccineTime: firstDoseTime 
+            };
+            
+            // 2. Save directly to Browser Storage (Instant & reliable for demo)
+            patients.push(newPatient);
+            localStorage.setItem('psv_patients', JSON.stringify(patients));
+            
+            document.getElementById('add-patient-form').reset(); 
+            toggleForm(); 
+            
+            // 3. Force the table to update immediately!
+            renderTable(); 
+        }
+
+        function deletePatient(id) {
+            if (confirm("Delete this patient record?")) { 
+                patients = patients.filter(p => p.id !== id);
+                localStorage.setItem('psv_patients', JSON.stringify(patients));
+                renderTable();
+            }
+        }
+
+        function downloadData() {
+            if (patients.length === 0) return alert("No data to download.");
+            let csv = "Name,Bed,Disease,Contact,Cycles,Interval\n";
+            patients.forEach(p => { csv += `"${p.name}","${p.bed}","${p.disease}","${p.contact}","${p.totalCycles}","${p.intervalHours}"\n`; });
+            const blob = new Blob([csv], { type: 'text/csv' });
+            const link = document.createElement("a");
+            link.href = window.URL.createObjectURL(blob);
+            link.download = "PSV_Patient_Records.csv";
+            link.click();
+        }
+
+        function renderTable() {
+            const tbody = document.getElementById('patient-table-body');
+            tbody.innerHTML = '';
+            patients.forEach(p => {
+                let timeDisplay = p.remainingCycles > 0 ? new Date(p.nextVaccineTime).toLocaleString() : `<span style="color: green;">Completed ✔️</span>`;
+                let statusHtml = p.remainingCycles > 0 ? `<span style="color: #e53935;">${p.remainingCycles} / ${p.totalCycles}</span>` : `<span style="color: green;">Done</span>`;
+                tbody.innerHTML += `<tr><td>${p.name}</td><td>${p.bed}</td><td>${p.disease}</td><td><small>${p.contact}</small></td><td>${timeDisplay}</td><td>${statusHtml}</td><td><button class="btn-delete" onclick="deletePatient(${p.id})">Delete</button></td></tr>`;
+            });
+        }
+
+        // Vaccine Alert Polling Loop
+        setInterval(() => {
+            const nowMs = Date.now();
+            document.getElementById('live-clock').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            
+            let dataChanged = false; // Track if we need to save changes
+            
+            patients.forEach(p => {
+                if (p.remainingCycles > 0 && nowMs >= p.nextVaccineTime) {
+                    emailjs.send(SERVICE_ID, TEMPLATE_ID, { to_email: p.contact, patient_name: p.name, bed_number: p.bed });
+                    alert(`🚨 VACCINE ALERT - ${p.name} at Bed ${p.bed}`);
+                    p.remainingCycles -= 1;
+                    p.nextVaccineTime = p.remainingCycles > 0 ? nowMs + (p.intervalHours * 3600000) : null;
+                    dataChanged = true;
+                }
+            });
+            
+            // If an alert went off, save the new cycle count to storage
+            if(dataChanged) {
+                localStorage.setItem('psv_patients', JSON.stringify(patients));
+                renderTable();
+            }
+        }, 2000);
+
+        // Vaccine Alert Polling Loop
+        setInterval(() => {
+            const nowMs = Date.now();
+            document.getElementById('live-clock').innerText = new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+            patients.forEach(p => {
+                if (p.remainingCycles > 0 && nowMs >= p.nextVaccineTime) {
+                    emailjs.send(SERVICE_ID, TEMPLATE_ID, { to_email: p.contact, patient_name: p.name, bed_number: p.bed });
+                    alert(`🚨 VACCINE ALERT - ${p.name} at Bed ${p.bed}`);
+                    p.remainingCycles -= 1;
+                    p.nextVaccineTime = p.remainingCycles > 0 ? nowMs + (p.intervalHours * 3600000) : null;
+                    database.ref('patients/' + p.id).update({ remainingCycles: p.remainingCycles, nextVaccineTime: p.nextVaccineTime });
+                }
+            });
+        }, 2000);
+    </script>
+</body>
+</html>
